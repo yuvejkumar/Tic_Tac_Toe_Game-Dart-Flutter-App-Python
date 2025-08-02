@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tic Tac Toe</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Tic Tac Toe</h1>
+    <div id="board">
+        {% for i in range(9) %}
+            <div class="cell" data-index="{{ i }}"></div>
+        {% endfor %}
+    </div>
+    <h2 id="status">Player X's turn</h2>
+    <button onclick="resetGame()">Restart Game</button>
+
+    <script>
+        let cells = document.querySelectorAll('.cell');
+        let statusText = document.getElementById('status');
+
+        cells.forEach(cell => {
+            cell.addEventListener('click', async () => {
+                let index = cell.getAttribute('data-index');
+
+                const res = await fetch('/move', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({index: parseInt(index)})
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    updateBoard(data.board);
+                    if (data.winner) {
+                        statusText.innerText = data.winner === 'Tie' ? 'Game Tied!' : `🎉 Player ${data.winner} Wins!`;
+                    } else {
+                        statusText.innerText = `Player ${data.player === 'X' ? 'O' : 'X'}'s turn`;
+                    }
+                }
+            });
+        });
+
+        function updateBoard(board) {
+            board.forEach((val, i) => {
+                cells[i].innerText = val;
+            });
+        }
+
+        async function resetGame() {
+            const res = await fetch('/reset', {method: 'POST'});
+            if (res.ok) {
+                cells.forEach(cell => cell.innerText = "");
+                statusText.innerText = "Player X's turn";
+            }
+        }
+    </script>
+</body>
+</html>
